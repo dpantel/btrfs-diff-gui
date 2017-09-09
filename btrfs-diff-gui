@@ -51,10 +51,15 @@ class TreeNodeBuilder:
         i = bisect.bisect_left(self._childnames, name)
         if (i == len(self._childnames)) or (self._childnames[i] != name):
             fpath = os.path.join(self._fpath, name)
-            nid = self._tree.insert(self._id, i, text=name, values=(
-                xstat(os.path.join(cx[0], fpath)),
-                xstat(os.path.join(cx[1], fpath)),
-            ))
+            nid = self._tree.insert(self._id, i, text=name,
+                values=(
+                    xstat(os.path.join(cx[0], fpath)), xstat(os.path.join(cx[1], fpath)),
+                ),
+                tags=(
+                    os.path.join(cx[0], fpath),
+                    os.path.join(cx[1], fpath)
+                )
+            )
             self._childnames.insert(i, name)
             self._childvalues.insert(i, TreeNodeBuilder(self._tree, nid, fpath))
         return self._childvalues[i]
@@ -71,6 +76,13 @@ def build_tree(tree, old, new):
             b = b.sub(pe, cx)
 
     compare_subvolumes(old, new, create_node)
+
+
+def showDiffMeld(event, tree):
+    if not tree.get_children(tree.focus()):
+        #print(tree.item(tree.focus()))
+        files = tree.item(tree.focus(), "tags")
+        subprocess.run(['meld', files[0], files[1]])
 
 
 def main():
@@ -98,6 +110,7 @@ def main():
     )
 
     tree.pack(fill='both', expand=True)
+    tree.bind("<Double-Button-1>", lambda event, arg=tree: showDiffMeld(event,arg))
     root.mainloop()
 
 
